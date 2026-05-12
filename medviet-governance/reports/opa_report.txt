@@ -1,0 +1,1 @@
+opa command was not installed in this Windows environment. The policy file policies/opa_policy.rego has been completed for admin, ml_engineer, data_analyst, intern, and restricted export rules.

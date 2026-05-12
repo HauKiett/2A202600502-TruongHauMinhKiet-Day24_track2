@@ -1,8 +1,10 @@
 # src/access/rbac.py
-import casbin
+import os
 from functools import wraps
-from fastapi import HTTPException, Header
 from typing import Optional
+
+import casbin
+from fastapi import HTTPException, Header
 
 # Danh sách user giả lập (production dùng JWT + DB)
 MOCK_USERS = {
@@ -12,43 +14,55 @@ MOCK_USERS = {
     "token-dave":  {"username": "dave",  "role": "intern"},
 }
 
-enforcer = casbin.Enforcer("src/access/model.conf", "src/access/policy.csv")
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+enforcer = casbin.Enforcer(
+    os.path.join(_BASE_DIR, "model.conf"),
+    os.path.join(_BASE_DIR, "policy.csv"),
+)
+
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     """
-    TODO: Parse Bearer token và trả về user info.
+    Parse Bearer token và trả về user info.
     Raise HTTPException 401 nếu token không hợp lệ.
     """
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=___, detail="Missing token")
+        raise HTTPException(status_code=401, detail="Missing token")
 
     token = authorization.split(" ")[1]
     user = MOCK_USERS.get(token)
 
     if not user:
-        raise HTTPException(status_code=___, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     return user
 
+
 def require_permission(resource: str, action: str):
     """
-    TODO: Decorator kiểm tra RBAC permission.
-    Dùng casbin enforcer để check (role, resource, action).
+    Decorator kiểm tra RBAC permission.
+    Dùng casbin enforcer để check (username, resource, action).
     Raise HTTPException 403 nếu không có quyền.
+
+    Lưu ý: enforcer dùng `g(r.sub, p.sub)` để map user → role, nên
+    truyền username (không phải role) làm subject.
     """
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Lấy current_user từ kwargs (FastAPI inject qua Depends)
             current_user = kwargs.get("current_user")
+            if current_user is None:
+                raise HTTPException(status_code=401, detail="Not authenticated")
+
+            username = current_user["username"]
             role = current_user["role"]
 
-            allowed = enforcer.enforce(___, ___, ___)  # TODO
+            allowed = enforcer.enforce(username, resource, action)
 
             if not allowed:
                 raise HTTPException(
-                    status_code=___,    # TODO: HTTP status code
-                    detail=f"Role '{role}' cannot '{action}' on '{resource}'"
+                    status_code=403,
+                    detail=f"Role '{role}' cannot '{action}' on '{resource}'",
                 )
             return await func(*args, **kwargs)
         return wrapper

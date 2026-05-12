@@ -11,30 +11,56 @@ allow if {
     input.user.role == "admin"
 }
 
-# ML Engineer được đọc training data và model artifacts
+# ML Engineer được đọc/ghi training data và model artifacts
 allow if {
     input.user.role == "ml_engineer"
     input.resource in {"training_data", "model_artifacts"}
     input.action in {"read", "write"}
 }
 
-# TODO: ML Engineer KHÔNG được delete production data
+# ML Engineer KHÔNG được delete production data
 deny if {
     input.user.role == "ml_engineer"
     input.resource == "production_data"
     input.action == "delete"
 }
 
-# TODO: Data Analyst chỉ được đọc aggregated metrics và viết reports
-allow if {
-    input.user.role == "data_analyst"
-    # Hoàn thành rule này
+# ML Engineer KHÔNG được đọc raw PII
+deny if {
+    input.user.role == "ml_engineer"
+    input.resource == "patient_data"
 }
 
-# TODO: Intern chỉ được access sandbox
+# Data Analyst chỉ được đọc aggregated metrics và viết reports
+allow if {
+    input.user.role == "data_analyst"
+    input.resource == "aggregated_metrics"
+    input.action == "read"
+}
+
+allow if {
+    input.user.role == "data_analyst"
+    input.resource == "reports"
+    input.action == "write"
+}
+
+# Data Analyst KHÔNG được đọc raw PII
+deny if {
+    input.user.role == "data_analyst"
+    input.resource == "patient_data"
+}
+
+# Intern chỉ được access sandbox
 allow if {
     input.user.role == "intern"
-    # Hoàn thành rule này
+    input.resource == "sandbox_data"
+    input.action in {"read", "write"}
+}
+
+# Intern KHÔNG được access production
+deny if {
+    input.user.role == "intern"
+    input.resource in {"patient_data", "training_data", "model_artifacts", "production_data"}
 }
 
 # Rule: không ai được export restricted data ra ngoài VN servers

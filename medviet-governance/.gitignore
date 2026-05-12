@@ -1,0 +1,37 @@
+# Sensitive
+.vault_key
+.vault_key_*
+*.key
+*.pem
+.env
+.env.*
+
+# Test artifacts (KHÔNG commit để demo hook block)
+test_secret.py
+
+# Raw data
+data/raw/*.csv
+!data/raw/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+tests/.tmp_vault/
+.venv/
+venv/
+*.egg-info/
+
+# Great Expectations
+gx/uncommitted/
+great_expectations/uncommitted/
+
+# IDE
+.vscode/
+.idea/
+
+# Reports
+reports/*.json
+reports/*.txt
+!reports/.gitkeep

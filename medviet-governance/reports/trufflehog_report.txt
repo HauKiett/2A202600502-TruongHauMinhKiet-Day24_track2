@@ -1,0 +1,1 @@
+trufflehog command was not installed in this Windows environment. Custom pre-commit secret scan passed cleanly; hook block behavior is captured in reports/hook_block_demo.txt.
